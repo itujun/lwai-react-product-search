@@ -15,6 +15,7 @@ function App() {
   const [newProduct, setNewProduct] = useState({ name: '', price: '' });
   const [isPending, startTransition] = useTransition();
   const deferredSearch = useDeferredValue(search);
+  const [editingProduct, setEditingProduct] = useState(null); // Menyimpan produk yang sedang diedit
 
   const itemsPerPage = 10;
 
@@ -79,6 +80,16 @@ function App() {
     }
   };
 
+  const handleSaveEdit = () => {
+    if (!editingProduct.name || !editingProduct.price) {
+      alert('Nama dan harga produk tidak boleh kosong!');
+      return;
+    }
+
+    setProducts((prev) => prev.map((product) => (product.id === editingProduct.id ? editingProduct : product)));
+    setEditingProduct(null); // Tutup form edit
+  };
+
   return (
     <div style={{ padding: '20px' }}>
       <h1>Product Search</h1>
@@ -98,6 +109,12 @@ function App() {
           {paginatedProducts.map((product) => (
             <motion.li key={product.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }} style={{ marginBottom: '10px' }}>
               {product.name} - ${product.price.toFixed(2)}{' '}
+              <button
+                onClick={() => setEditingProduct(product)} // Mengatur produk yang akan diedit
+                style={{ marginLeft: '10px' }}
+              >
+                Edit
+              </button>
               <button onClick={() => handleDeleteProduct(product.id)} style={{ marginLeft: '10px', color: 'red' }}>
                 Delete
               </button>
@@ -105,6 +122,20 @@ function App() {
           ))}
         </AnimatePresence>
       </ul>
+
+      {editingProduct && (
+        <div style={{ marginTop: '20px', border: '1px solid gray', padding: '20px', borderRadius: '10px' }}>
+          <h3>Edit Product</h3>
+          <input type="text" value={editingProduct.name} onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })} style={{ marginRight: '10px', padding: '10px' }} />
+          <input type="number" value={editingProduct.price} onChange={(e) => setEditingProduct({ ...editingProduct, price: parseFloat(e.target.value) })} style={{ marginRight: '10px', padding: '10px' }} />
+          <button onClick={() => handleSaveEdit()} style={{ marginRight: '10px', padding: '10px' }}>
+            Save
+          </button>
+          <button onClick={() => setEditingProduct(null)} style={{ padding: '10px', backgroundColor: 'red', color: 'white' }}>
+            Cancel
+          </button>
+        </div>
+      )}
 
       <div style={{ marginTop: '20px' }}>
         <button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} style={{ marginRight: '10px' }}>
@@ -120,6 +151,7 @@ function App() {
 
       <h2>Total Price: ${totalPrice.toFixed(2)}</h2>
 
+      {/* Add Product */}
       <div style={{ marginTop: '20px' }}>
         <h3>Add New Product</h3>
         <input type="text" placeholder="Product name" value={newProduct.name} onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })} style={{ marginRight: '10px', padding: '10px' }} />
@@ -128,6 +160,7 @@ function App() {
           Add Product
         </button>
       </div>
+      {/* End Add Product */}
     </div>
   );
 }
