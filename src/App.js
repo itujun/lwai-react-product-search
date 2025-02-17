@@ -1,18 +1,20 @@
-import './App.css';
 import React, { useState, useMemo, useCallback, useTransition, useDeferredValue } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const intialProducts = Array.from({ length: 100000 }, (_, i) => ({
+const initialProducts = Array.from({ length: 1000 }, (_, i) => ({
   id: i + 1,
   name: `Product ${i + 1}`,
   price: Math.floor(Math.random() * 100) + 1,
 }));
 
 function App() {
+  const [products, setProducts] = useState(initialProducts);
   const [search, setSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [sortOption, setSortOption] = useState('name-asc');
+  const [newProduct, setNewProduct] = useState({ name: '', price: '' });
   const [isPending, startTransition] = useTransition();
   const deferredSearch = useDeferredValue(search);
-  const [currentPage, setCurrentPage] = useState(1);
 
   const itemsPerPage = 10;
 
@@ -23,9 +25,41 @@ function App() {
     });
   }, []);
 
+  const handleSortChange = useCallback((e) => {
+    setSortOption(e.target.value);
+  }, []);
+
+  const handleAddProduct = () => {
+    if (!newProduct.name || !newProduct.price) {
+      alert('Nama dan harga produk harus diisi!');
+      return;
+    }
+    const id = products.length + 1;
+    setProducts((prev) => [...prev, { id, name: newProduct.name, price: parseFloat(newProduct.price) }]);
+    setNewProduct({ name: '', price: '' });
+  };
+
+  const handleDeleteProduct = (id) => {
+    setProducts((prev) => prev.filter((product) => product.id !== id));
+  };
+
+  const sortedProducts = useMemo(() => {
+    const sorted = [...products];
+    if (sortOption === 'name-asc') {
+      sorted.sort((a, b) => a.name.localeCompare(b.name));
+    } else if (sortOption === 'name-desc') {
+      sorted.sort((a, b) => b.name.localeCompare(a.name));
+    } else if (sortOption === 'price-asc') {
+      sorted.sort((a, b) => a.price - b.price);
+    } else if (sortOption === 'price-desc') {
+      sorted.sort((a, b) => b.price - a.price);
+    }
+    return sorted;
+  }, [products, sortOption]);
+
   const filteredProducts = useMemo(() => {
-    return intialProducts.filter((product) => product.name.toLowerCase().includes(deferredSearch.toLowerCase()));
-  }, [deferredSearch]);
+    return sortedProducts.filter((product) => product.name.toLowerCase().includes(deferredSearch.toLowerCase()));
+  }, [sortedProducts, deferredSearch]);
 
   const totalPrice = useMemo(() => {
     return filteredProducts.reduce((total, product) => total + product.price, 0);
@@ -48,15 +82,25 @@ function App() {
   return (
     <div style={{ padding: '20px' }}>
       <h1>Product Search</h1>
-      <input type="text" placeholder="Search products..." onChange={handleSearchChange} style={{ marginBottom: '20px', padding: '10px', width: '300px' }} />
-
-      {isPending ? <p>Loading...</p> : null}
+      <div style={{ marginBottom: '20px' }}>
+        <input type="text" placeholder="Search products..." onChange={handleSearchChange} value={search} style={{ marginRight: '10px', padding: '10px', width: '300px' }} />
+        <select onChange={handleSortChange} value={sortOption} style={{ padding: '10px' }}>
+          <option value="name-asc">Sort by Name (A-Z)</option>
+          <option value="name-desc">Sort by Name (Z-A)</option>
+          <option value="price-asc">Sort by Price (Low to High)</option>
+          <option value="price-desc">Sort by Price (High to Low)</option>
+        </select>
+      </div>
+      {isPending && <p>Loading...</p>}
 
       <ul>
         <AnimatePresence>
           {paginatedProducts.map((product) => (
-            <motion.li key={product.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.1 }}>
-              {product.name} - ${product.price}
+            <motion.li key={product.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }} style={{ marginBottom: '10px' }}>
+              {product.name} - ${product.price.toFixed(2)}{' '}
+              <button onClick={() => handleDeleteProduct(product.id)} style={{ marginLeft: '10px', color: 'red' }}>
+                Delete
+              </button>
             </motion.li>
           ))}
         </AnimatePresence>
@@ -74,7 +118,16 @@ function App() {
         </button>
       </div>
 
-      <h2>Total Price: ${totalPrice}</h2>
+      <h2>Total Price: ${totalPrice.toFixed(2)}</h2>
+
+      <div style={{ marginTop: '20px' }}>
+        <h3>Add New Product</h3>
+        <input type="text" placeholder="Product name" value={newProduct.name} onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })} style={{ marginRight: '10px', padding: '10px' }} />
+        <input type="number" placeholder="Price" value={newProduct.price} onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })} style={{ marginRight: '10px', padding: '10px' }} />
+        <button onClick={handleAddProduct} style={{ padding: '10px' }}>
+          Add Product
+        </button>
+      </div>
     </div>
   );
 }
