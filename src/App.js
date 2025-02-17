@@ -16,6 +16,7 @@ function App() {
   const [isPending, startTransition] = useTransition();
   const deferredSearch = useDeferredValue(search);
   const [editingProduct, setEditingProduct] = useState(null); // Menyimpan produk yang sedang diedit
+  const [priceFilter, setPriceFilter] = useState({ min: 0, max: 1000 });
 
   const itemsPerPage = 10;
 
@@ -72,8 +73,8 @@ function App() {
   }, [products, sortOption]);
 
   const filteredProducts = useMemo(() => {
-    return sortedProducts.filter((product) => product.name.toLowerCase().includes(deferredSearch.toLowerCase()));
-  }, [sortedProducts, deferredSearch]);
+    return sortedProducts.filter((product) => product.name.toLowerCase().includes(deferredSearch.toLowerCase()) && product.price >= priceFilter.min && product.price <= priceFilter.max);
+  }, [sortedProducts, deferredSearch, priceFilter]);
 
   const totalPrice = useMemo(() => {
     return filteredProducts.reduce((total, product) => total + product.price, 0);
@@ -114,6 +115,12 @@ function App() {
           <option value="price-asc">Sort by Price (Low to High)</option>
           <option value="price-desc">Sort by Price (High to Low)</option>
         </select>
+        <div style={{ marginBottom: '20px' }}>
+          <label style={{ marginRight: '10px' }}>Min Price:</label>
+          <input type="number" value={priceFilter.min} onChange={(e) => setPriceFilter((prev) => ({ ...prev, min: Number(e.target.value) }))} style={{ marginRight: '20px', padding: '5px', width: '80px' }} />
+          <label style={{ marginRight: '10px' }}>Max Price:</label>
+          <input type="number" value={priceFilter.max} onChange={(e) => setPriceFilter((prev) => ({ ...prev, max: Number(e.target.value) }))} style={{ padding: '5px', width: '80px' }} />
+        </div>
       </div>
       {isPending && <p>Loading...</p>}
 
