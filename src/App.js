@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useTransition, useDeferredValue } from 'react';
+import React, { useState, useMemo, useCallback, useTransition, useDeferredValue, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const initialProducts = Array.from({ length: 1000 }, (_, i) => ({
@@ -18,6 +18,19 @@ function App() {
   const [editingProduct, setEditingProduct] = useState(null); // Menyimpan produk yang sedang diedit
 
   const itemsPerPage = 10;
+
+  useEffect(() => {
+    // * Simpan data ke local storage
+    localStorage.setItem('products', JSON.stringify(products));
+  }, [products]);
+
+  useEffect(() => {
+    // * Ambil data dari local storage
+    const storedProducts = localStorage.getItem('products');
+    if (storedProducts) {
+      setProducts(JSON.parse(storedProducts));
+    }
+  }, []);
 
   const handleSearchChange = useCallback((e) => {
     startTransition(() => {
